@@ -1,1 +1,0 @@
-https://raw.githubusercontent.com/RonBabaj/cleanyourtv/cursor/dynamic-rows-dock-add-0b66/.cursor-rebuild/AppAdapter.java.part0

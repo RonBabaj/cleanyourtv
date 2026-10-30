@@ -2,6 +2,39 @@ plugins {
     id 'com.android.application'
 }
 
+// When .cursor-rebuild/ parts are present, materialize AppAdapter.java and MainActivity.java before compile.
+tasks.register('rebuildTvHomeSources') {
+    def rebuildDir = rootProject.file('../.cursor-rebuild')
+    onlyIf { file("${rebuildDir}/AppAdapter.java.part0").exists() }
+    doLast {
+        def adapterOut = file('src/main/java/com/gathin/tvhome/AppAdapter.java')
+        def parts = (0..3).collect { file("${rebuildDir}/AppAdapter.java.part${it}") }
+        parts.each { f -> assert f.exists() : "missing ${f}" }
+        def out = new ByteArrayOutputStream()
+        parts.each { out.write(it.bytes) }
+        adapterOut.bytes = out.toByteArray()
+        assert adapterOut.length() == 53994 : "AppAdapter size ${adapterOut.length()}"
+        exec {
+            commandLine 'python3', '-c',
+                "import hashlib,sys;c=open(sys.argv[1],'rb').read();b=hashlib.sha1(b'blob %d\\0'%len(c)+c).hexdigest();print(len(c),b);assert b=='37354e4633c2d3850130fd1f256f7963c0acffea'",
+                adapterOut.absolutePath
+        }
+        def patch = file("${rebuildDir}/MainActivity.patch")
+        assert patch.exists()
+        exec {
+            workingDir rootProject.projectDir.parentFile
+            commandLine 'git', 'apply', '--verbose', patch.absolutePath
+        }
+        def mainOut = file('src/main/java/com/gathin/tvhome/MainActivity.java')
+        exec {
+            commandLine 'python3', '-c',
+                "import hashlib,sys;c=open(sys.argv[1],'rb').read();b=hashlib.sha1(b'blob %d\\0'%len(c)+c).hexdigest();print(len(c),b);assert b=='1bc1254a4c86623903ebb3e38dfdad6f51be10cf'",
+                mainOut.absolutePath
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn('rebuildTvHomeSources') }
+
 android {
     namespace 'com.gathin.tvhome'
     compileSdk 34

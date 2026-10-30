@@ -1,1 +1,1 @@
-$file:/tmp/AppAdapter_restore.java
+$file:/agent/agent-tools/aa_full_content.txt

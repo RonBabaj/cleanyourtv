@@ -269,4 +269,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         List<ResolveInfo> found = new ArrayList<>(leanback);
         Set<String> tvPackages = new HashSet<>();
         for (ResolveInfo ri : found) if (ri.activityInfo != null) tvPackages.add(ri.activityInfo.packageName);
- 
+        leanbackPackages = tvPackages;
+        // Copy before merging: LibraryApps.load() may return an immutable empty set (#419).
+        Set<String> added = new HashSet<>(LibraryApps.load(ctx));
+        added.addAll(libraryPreload);
+        Set<String> removed = LibraryApps.loadRemoved(ctx);
+        if (!added.isEmpty()) {
+            Set<String> seen = new HashSet<>(tvPackages);
+            for (ResolveInfo ri : pm.queryIntentActivities(
+                    new Intent(Intent.ACTION_MAIN).addC

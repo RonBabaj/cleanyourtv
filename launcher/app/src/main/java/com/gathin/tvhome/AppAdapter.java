@@ -1,1 +1,1 @@
-/tmp/embed_full_aa.txt
+@file:///agent/agent-tools/AppAdapter_FULL_CONTENT.java

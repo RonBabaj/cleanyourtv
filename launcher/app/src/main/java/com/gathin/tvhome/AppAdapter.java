@@ -1,1 +1,1 @@
-@file:/agent/agent-tools/push_AppAdapter_FINAL.json
+__LOAD_FROM_MCP_ARGS__

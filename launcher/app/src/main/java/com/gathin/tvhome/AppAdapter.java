@@ -123,4 +123,22 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     /** The same for either layout: the plain grid (dock_row false) uses the compact spacing. */
-    static int ite
+    static int itemHeightPx(int tileHeightPx, boolean dockRow, float density) {
+        return tileHeightPx + Math.round((dockRow ? ITEM_EXTRA_DP : COMPACT_ITEM_EXTRA_DP) * density);
+    }
+
+    /**
+     * dock_row false: 4dp padding above and below, a 4dp gap and a 20dp name label, and 16dp kept under the last
+     * row. The plain grid fits more rows on the screen, and with item_app.xml's roomier spacing the tiles came
+     * out small with wide gaps between them.
+     */
+    static final float COMPACT_ITEM_EXTRA_DP = 4 + 4 + 4 + 20;
+    static final float COMPACT_BOTTOM_ROOM_DP = 16;
+
+    /** item_app.xml: 8dp padding above and below, a 7dp gap and the 22dp name label under the tile. */
+    static final float ITEM_EXTRA_DP = 45;
+    /** DockDecoration's offsets above and below the dock row. */
+    static final float DOCK_EXTRA_DP = 6 + 12;
+    /** Room kept under the last row rows_below_dock asks for (MainActivity places the dock with the same). */
+    static final float BOTTOM_ROOM_DP = 30;
+    /** R

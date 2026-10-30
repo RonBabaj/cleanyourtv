@@ -1,1 +1,1 @@
-@file:///agent/agent-tools/AppAdapter_FULL_CONTENT.java
+../../../../../../../.cursor-size-probe-5k.txt

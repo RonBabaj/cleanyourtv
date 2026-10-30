@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/tmp/aa_content_only.txt
+file:///tmp/aa_content_only.txt

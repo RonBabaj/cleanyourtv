@@ -1,1 +1,1 @@
-@file:///tmp/prog_content_1.java
+USE_ARGUMENTS_FILE

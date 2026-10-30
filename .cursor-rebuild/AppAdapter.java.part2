@@ -1,0 +1,293 @@
+bility(View.VISIBLE);
+            h.card.setFocusable(true);
+            boolean dockKind = DockSlots.inDockRow(dockRow, singleRow, position, dockSize);
+            h.name.setText(ctx.getString(R.string.dock_add_name));
+            h.name.setVisibility(dockKind && restNameAlpha == 0f ? View.INVISIBLE : View.VISIBLE);
+            h.inDock = dockKind;
+            boolean focused = h.card.isFocused();
+            h.name.setAlpha(focused ? 1f : restNameAlpha);
+            h.card.setScaleX(focused && animations ? focusScale() : 1f);
+            h.card.setScaleY(focused && animations ? focusScale() : 1f);
+            h.card.setTranslationY(0f);
+            h.card.setTranslationZ(0f);
+            h.banner.setImageDrawable(null);
+            h.banner.setVisibility(View.GONE);
+            h.banner.setScaleX(1f);
+            h.banner.setScaleY(1f);
+            h.card.setBackground(h.cardBackground);
+            h.icon.setImageDrawable(e.icon);
+            h.icon.setVisibility(View.VISIBLE);
+            h.label.setText(e.label);
+            h.label.setVisibility(View.VISIBLE);
+            h.card.setOnClickListener(v -> listener.onLibraryRequested());
+            h.card.setOnLongClickListener(null);
+            return;
+        }
+        h.card.setVisibility(View.VISIBLE);
+        h.card.setFocusable(true);
+        h.name.setText(e.name);
+        // The dock has no labels, unless always_show_names asks for them (DockDecoration then makes room in the band).
+        // In a single row every tile is the dock's kind: the big title above names it.
+        boolean dockKind = DockSlots.inDockRow(dockRow, singleRow, position, dockSize);
+        h.name.setVisibility(dockKind && restNameAlpha == 0f ? View.INVISIBLE : View.VISIBLE);
+        h.inDock = dockKind;
+        boolean focused = h.card.isFocused();   // a rebind after reload() can hit the focused tile
+        h.name.setAlpha(focused ? 1f : restNameAlpha);
+        h.card.setScaleX(focused && animations ? focusScale() : 1f);
+        h.card.setScaleY(focused && animations ? focusScale() : 1f);
+        h.card.setTranslationY(focused && advancedEffects && !dockKind ? -4f * ctx.getResources().getDisplayMetrics().density : 0f);
+        h.card.setTranslationZ(focused && advancedEffects ? 8f * ctx.getResources().getDisplayMetrics().density : 0f);
+        h.banner.setScaleX(focused && advancedEffects ? 1.035f : 1f);
+        h.banner.setScaleY(focused && advancedEffects ? 1.035f : 1f);
+        // A fully opaque banner covers the whole card (centerCrop), so the card's own fill under it is drawn for
+        // nothing on every frame; keep it under banners with transparent parts and under icon tiles.
+        h.card.setBackground(e.banner != null && e.banner.getOpacity() == PixelFormat.OPAQUE ? null : h.cardBackground);
+        if (uniformTiles && e.banner == null) {
+            if (e.backdrop == null) e.backdrop = backdrop(e.icon, ambientColorAt(position));
+            h.card.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, e.backdrop));
+        }
+        if (e.banner != null) {
+            h.banner.setImageDrawable(e.banner);
+            h.banner.setVisibility(View.VISIBLE);
+            h.icon.setVisibility(View.GONE);
+            h.label.setVisibility(View.GONE);
+        } else {
+            h.banner.setImageDrawable(null);
+            h.banner.setVisibility(View.GONE);
+            h.icon.setImageDrawable(e.icon);
+            h.icon.setVisibility(View.VISIBLE);
+            h.label.setText(e.label);
+            h.label.setVisibility(uniformTiles ? View.GONE : View.VISIBLE);
+        }
+        h.card.setOnClickListener(v -> launch(e));
+        h.card.setOnLongClickListener(v -> {
+            if (tileMenu) {
+                int pos = h.getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) listener.onTileLongPress(pos, v);
+                return true;
+            }
+            Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + e.pkg));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                ctx.startActivity(i);
+            } catch (ActivityNotFoundException ignored) {
+            }
+            return true;
+        });
+    }
+
+    /** Opens the tile's activity by explicit component, with no extras: a card can name nothing else. */
+    private void launch(Entry e) {
+        if (e.kind == Entry.ADD) {
+            listener.onLibraryRequested();
+            return;
+        }
+        if (e.kind == Entry.HOME_SETTINGS) {
+            ctx.startActivity(new Intent(ctx, HomeSettingsActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return;
+        }
+        Intent i = new Intent(Intent.ACTION_MAIN)
+                .setComponent(e.component)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        // TV apps launch with the same leanback intent as from the stock launcher or the remote, so an app
+        // already running resumes instead of restarting; only phone apps added from the library use plain MAIN.
+        if (leanbackPackages.contains(e.pkg)) i.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        String action = launchActions.get(e.pkg);
+        String inputId = LaunchActions.inputId(action);
+        if (inputId != null) {
+            listener.onOpenInput(inputId);
+            return;
+        }
+        if (action != null) {
+            // NEW_TASK only: with RESET_TASK_IF_NEEDED, Android just brings a running task of the app to the front
+            // ("Activity not started"), so the screen never opens while the app is up, e.g. MagentaTV's boot-time task.
+            Intent byAction = LaunchActions.intent(e.pkg, action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (ctx.getPackageManager().resolveActivity(byAction, 0) != null) i = byAction;
+        }
+        try {
+            ctx.startActivity(i);
+            if (cinematic) LastOpened.record(ctx, e.pkg);
+            if (advancedEffects && !reducedMotion && ctx instanceof Activity) {
+                ((Activity) ctx).overridePendingTransition(R.anim.app_open_enter, R.anim.app_open_exit);
+            }
+        } catch (Exception ex) {
+            Toast.makeText(ctx, ctx.getString(R.string.cant_open, e.label), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public int getItemCount() {
+        return items.size() + (showLibrary ? 1 : 0);
+    }
+
+    int appCount() { return items.size(); }
+
+    boolean isLibraryAt(int position) { return showLibrary && position == items.size(); }
+
+    @Override public int getItemViewType(int position) { return isLibraryAt(position) ? 1 : 0; }
+
+    boolean containsPackage(String pkg) {
+        // Empty/+ dock placeholders reuse this package name as their ComponentName host; skip them so the
+        // App library does not treat every missing shortcut as already on Home (#fork).
+        for (Entry entry : items) {
+            if (entry.kind == Entry.EMPTY || entry.kind == Entry.ADD) continue;
+            if (entry.pkg.equals(pkg)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return isLibraryAt(position) ? Long.MIN_VALUE : items.get(position).component.flattenToShortString().hashCode();
+    }
+
+    /** Uses this saved order and dock size from the next reload() (Order.ranks, Order.docked). */
+    void setSavedOrder(Map<String, Integer> ranks, int docked) {
+        savedRanks = ranks;
+        savedDocked = docked;
+    }
+
+    /**
+     * A tile in the dock: one of the first savedDocked tiles of the saved order when one was recorded, so an app
+     * the owner moved into the dock stays there (#499); else a dock_apps entry.
+     */
+    private boolean isDocked(Entry e) {
+        if (savedDocked < 0) return favourites.contains(e.pkg);
+        Integer rank = savedRanks.get(e.component.flattenToShortString());
+        return rank != null && rank < savedDocked;
+    }
+
+    /** Reorder mode on or off; takes effect at the next reload() (empty dock slots are left out while on). */
+    void setReordering(boolean on) {
+        reordering = on;
+    }
+
+    boolean hasEmptySlots() {
+        return emptySlots > 0;
+    }
+
+    /** Tiles that can be moved: everything but the "Default home" tile, which always stays last. */
+    int movableCount() {
+        int n = items.size();
+        return n > 0 && items.get(n - 1).kind == Entry.HOME_SETTINGS ? n - 1 : n;
+    }
+
+    /** Keys of the movable tiles in their current order, for Order (empty/add dock slots are not tiles). */
+    List<String> movableKeys() {
+        List<String> keys = new ArrayList<>();
+        for (int i = 0; i < movableCount(); i++) {
+            Entry e = items.get(i);
+            if (e.kind != Entry.EMPTY && e.kind != Entry.ADD) keys.add(e.component.flattenToShortString());
+        }
+        return keys;
+    }
+
+    /** Moves one tile; the others shift by one. Stable ids keep the moved tile's view (and its focus). */
+    void move(int from, int to) {
+        if (from == to || from < 0 || to < 0 || from >= movableCount() || to >= movableCount()) return;
+        items.add(to, items.remove(from));
+        notifyItemMoved(from, to);
+        // The dock row hides names by position: rebind the tiles whose side of the dock edge changed.
+        if (from < dockSize || to < dockSize) {
+            int lo = Math.min(from, to), hi = Math.max(from, to);
+            notifyItemRangeChanged(lo, hi - lo + 1);
+        }
+    }
+
+    /** Stable key for the app at a position (its component), or null. */
+    String keyAt(int position) {
+        return position >= 0 && position < items.size() ? items.get(position).component.flattenToShortString() : null;
+    }
+
+    /** Position of the app with this key, or -1 when it is gone. */
+    int positionOf(String key) {
+        if (key == null) return -1;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).component.flattenToShortString().equals(key)) return i;
+        }
+        return -1;
+    }
+
+    /** Dock slots that hold an app: the whole dock unless some slots are empty. */
+    int dockFilled() {
+        int filled = emptySlots > 0 ? docked : dockSize;
+        // The + counts as an occupied dock slot when it sits in the dock row.
+        if (addButton && docked < dockSize && filled < docked + 1) filled = docked + 1;
+        return filled;
+    }
+
+    /** A position focus can land on: an empty dock slot gives the + (or the last dock app). */
+    int focusablePosition(int position) {
+        int beforeEmpty = docked + (addButton && docked < dockSize ? 1 : 0);
+        return DockSlots.focusable(position, beforeEmpty, emptySlots);
+    }
+
+    /** Apps under the dock row (for dynamic_rows); empty/+ dock slots do not count. */
+    int gridAppCount() {
+        int n = 0;
+        for (int i = dockSize; i < items.size(); i++) {
+            int kind = items.get(i).kind;
+            if (kind == Entry.APP || kind == Entry.CARD || kind == Entry.HOME_SETTINGS) n++;
+        }
+        return n;
+    }
+
+    boolean hasAddButton() {
+        return addButton;
+    }
+
+    String labelAt(int position) {
+        return position >= 0 && position < items.size() ? items.get(position).label : "";
+    }
+
+    String packageAt(int position) {
+        return position >= 0 && position < items.size() ? items.get(position).pkg : null;
+    }
+
+    /** The tile's artwork, its banner or else its icon, for the cinematic shelf's backdrop (HeroArt). */
+    Drawable artworkAt(int position) {
+        if (position < 0 || position >= items.size()) return null;
+        Entry e = items.get(position);
+        return e.banner != null ? e.banner : e.icon;
+    }
+
+    float focusScale() {
+        return !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
+    }
+
+    /** A vivid colour sampled from the app's banner (or icon), cached per entry; a card's accent when it set one. */
+    int ambientColorAt(int position) {
+        if (position < 0 || position >= items.size()) return 0xFF444444;
+        Entry e = items.get(position);
+        if (e.ambient == 0) {
+            e.ambient = uniformTiles && e.banner == null ? dominantColor(e.icon) : vividColor(e.banner != null ? e.banner : e.icon);
+        }
+        return e.ambient;
+    }
+
+    /** Share of the tile height the icon takes in uniform_tiles mode (onCreateViewHolder). */
+    private static final float ICON_SHARE = 0.62f;
+
+    /**
+     * The colour covering most of an icon, for a card that should read as that app: a small saturated badge
+     * (a red "new" corner on a blue icon) must not win, as it can with {@link #vividColor}. Grey if none.
+     */
+    private static int dominantColor(Drawable live) {
+        if (live == null) return 0xFF6E6E73;
+        Drawable d = live.getConstantState() != null ? live.getConstantState().newDrawable().mutate() : live;
+        Rect saved = new Rect(d.getBounds());
+        int n = 24;
+        Bitmap bmp = Bitmap.createBitmap(n, n, Bitmap.Config.ARGB_8888);
+        d.setBounds(0, 0, n, n);
+        d.draw(new Canvas(bmp));
+        d.setBounds(saved);
+        float[] weight = new float[12];
+        float[][] sum = new float[12][3];
+        float[] hsv = new float[3];
+        for (int y = 0; y < n; y++) {
+            for (int x = 0; x < n; x++) {
+                int p = bmp.getPixel(x, y);
+                if (Color.alpha(p) < 128) continue;
+                Color.colorToHSV(p, hsv);
+                if (hsv[1] < 0.3f || hs

@@ -1,1 +1,1 @@
-/agent/agent-tools/cof_appadapter_final.json
+$file:/tmp/AppAdapter_concat.java

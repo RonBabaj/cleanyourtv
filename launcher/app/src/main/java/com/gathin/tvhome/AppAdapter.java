@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/agent/agent-tools/push_one_4.json
+@file:///tmp/prog_content_1.java

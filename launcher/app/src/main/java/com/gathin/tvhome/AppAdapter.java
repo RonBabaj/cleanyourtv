@@ -1,1 +1,1 @@
-PLACEHOLDER
+@file:/agent/agent-tools/push_AppAdapter_FINAL.json

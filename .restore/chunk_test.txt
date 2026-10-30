@@ -1,0 +1,9 @@
+ tiles (res/values/config.xml, hidden_apps). */
+    private final Set<String> hidden;
+    /** Apps pre-seeded into the App library's "added" set (config.xml library_apps); empty by default. */
+    private final Set<String> libraryPreload;
+    private final boolean animations;
+    private final boolean advancedEffects;
+    private final boolean showLibrary;
+    /** Packages with a leanback entry at the last reload(): their tiles launch with the leanback category. */
+    private Set<String> leanba

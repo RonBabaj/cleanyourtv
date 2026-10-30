@@ -1,1 +1,1 @@
-__CURSOR_MCP_ARGS_FILE__
+../../../../../../../.cursor-size-probe-5k.txt

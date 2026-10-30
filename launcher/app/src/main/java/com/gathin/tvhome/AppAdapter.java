@@ -1,1 +1,1 @@
-USE_ARGUMENTS_FILE
+/agent/agent-tools/cof_appadapter_final.json

@@ -313,4 +313,60 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (card != null) {
                 fresh.add(new Entry(Entry.CARD, label, component, banner, icon, card.caption, card.accent));
             } else {
-                fresh.ad
+                fresh.add(new Entry(label, component, banner, icon));
+            }
+        }
+        Collections.sort(fresh, (a, b) -> {
+            // The owner's own order first; tiles it does not know (new installs) follow by the rule below.
+            int saved = Order.compare(savedRanks, a.component.flattenToShortString(), b.component.flattenToShortString());
+            if (saved != 0) return saved;
+            int fa = favourites.indexOf(a.pkg), fb = favourites.indexOf(b.pkg);
+            if (fa >= 0 || fb >= 0) {
+                if (fa < 0) return 1;
+                if (fb < 0) return -1;
+                return Integer.compare(fa, fb);
+            }
+            // Cards come right after the configured dock apps, before the alphabetical grid.
+            boolean ca = a.kind == Entry.CARD, cb = b.kind == Entry.CARD;
+            if (ca != cb) return ca ? -1 : 1;
+            return a.label.compareToIgnoreCase(b.label);
+        });
+        // Retain the optional Default-home tile until dependent tile-ordering work is merged.
+        if (showHomeSettings
+                && pm.resolveActivity(new Intent(Settings.ACTION_HOME_SETTINGS), 0) != null) {
+            fresh.add(new Entry(Entry.HOME_SETTINGS, ctx.getString(R.string.home_settings),
+                    new ComponentName(ctx, HomeSettingsActivity.class), null,
+                    ctx.getDrawable(R.drawable.ic_home_settings), null, 0));
+        }
+        docked = 0;
+        while (docked < fresh.size() && isDocked(fresh.get(docked))) docked++;
+        emptySlots = dockRow && !reordering ? DockSlots.empty(docked, dockSize, fresh.size(), fillDock) : 0;
+        // + after the favourites: pin custom APKs / apps that never got a Home shortcut.
+        addButton = dockAddButton && dockRow && !reordering && !singleRow;
+        if (addButton) {
+            String addLabel = ctx.getString(R.string.dock_add_label);
+            Drawable plus = ctx.getDrawable(R.drawable.ic_add);
+            Entry add = new Entry(Entry.ADD, addLabel, new ComponentName(ctx, "dock-add-shortcut"),
+                    null, plus, null, 0xFF5AC8FA);
+            // Prefer a free dock slot; otherwise sit at the start of the grid below the dock.
+            if (docked < dockSize) {
+                fresh.add(docked, add);
+                if (emptySlots > 0) emptySlots--;
+            } else {
+                fresh.add(dockSize, add);
+            }
+        }
+        int emptyAt = docked + (addButton && docked < dockSize ? 1 : 0);
+        for (int i = 0; i < emptySlots; i++) {
+            fresh.add(emptyAt + i, new Entry(Entry.EMPTY, "", new ComponentName(ctx, "empty-dock-slot-" + i),
+                    null, null, null, 0));
+        }
+        items.clear();
+        items.addAll(fresh);
+        notifyDataSetChanged();
+    }
+
+    /** icon_tiles: the app's icon centred on a dark banner-shaped tile, for apps whose own banner crops badly. */
+    private Drawable iconBanner(Drawable icon) {
+        int w = 320, h = 180, side = 104;
+        android.graphics.

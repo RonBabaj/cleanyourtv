@@ -1,0 +1,10 @@
+    cardLp.width = w;
+        cardLp.height = h;
+        card.setLayoutParams(cardLp);
+        View name = v.findViewById(R.id.name);
+        ViewGroup.MarginLayoutParams nameLp = (ViewGroup.MarginLayoutParams) name.getLayoutParams();
+        nameLp.width = w;
+        nameLp.topMargin = h + Math.round((dockRow ? 7 : 4) * density);
+        if (!dockRow) {
+            // Compact spacing (COMPACT_ITEM_EXTRA_DP): 4dp item padding and a 20dp name instead of 8dp and 22dp.
+            nameLp.height = M

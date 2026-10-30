@@ -1,0 +1,18 @@
+{
+  "vpn_app": "com.surfshark.vpnclient.android",
+  "dock_apps": [
+    "com.netflix.ninja",
+    "com.amazon.amazonvideo.livingroom",
+    "com.google.android.youtube.tv",
+    "com.spotify.tv.android"
+  ],
+  "dynamic_rows": true,
+  "dock_add_button": true,
+  "app_library": true,
+  "tile_menu": true,
+  "reorder_button": true,
+  "library_button": true,
+  "launcher_settings_button": true,
+  "dock_glass": true,
+  "wallpaper": true
+}

@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+// Former .cursor-rebuild materialize step removed: AppAdapter/MainActivity on disk are the source of
+// truth (dynamic_rows + dock_add_button). Re-running the old parts/patch would wipe those changes.
+
 android {
     namespace 'com.gathin.tvhome'
     compileSdk 34

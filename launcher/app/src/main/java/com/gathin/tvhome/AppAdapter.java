@@ -165,4 +165,137 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Shrink at most to MIN_HEIGHT_FIT of the width-only size. Below that the tiles look lost in their wide
         // columns (2 rows under a titled dock came out at 80dp); the rows that still don't fit run off the bottom
         // and scroll, and MainActivity keeps the title's room above the dock.
-        return Math.max(Math.max(Math.round(80 * density), Math.round(w * MIN_HEIGHT_FIT)), Math.min(w, byHei
+        return Math.max(Math.max(Math.round(80 * density), Math.round(w * MIN_HEIGHT_FIT)), Math.min(w, byHeight));
+    }
+
+    /** The smallest share of the width-only tile size that fitting rows_below_dock into the height may go to. */
+    static final float MIN_HEIGHT_FIT = 0.85f;
+
+    private final Context ctx;
+    private final int rowsBelowDock;
+    private final boolean dockTitle;
+    /** The owner's saved order (reorder button, Order): key -> rank. Empty when there is none or it no longer applies. */
+    private Map<String, Integer> savedRanks = Collections.emptyMap();
+    /** Dock size recorded with the saved order (Order.docked), or -1: then dock_apps says which tiles are docked. */
+    private int savedDocked = -1;
+    /** Reorder mode: no empty dock slots, so every position holds a tile that can move. */
+    private boolean reordering;
+    private final TileListener listener;
+    private final int dockSize;
+    /** config dock_row: false makes the dock apps the first tiles of one plain grid (names shown, no empty slots). */
+    private final boolean dockRow;
+    /** config single_row: tiles sit in one sideways row, each as wide as a grid column would be. */
+    private final boolean singleRow;
+    /** config always_show_names: the alpha of an unfocused tile's name (0 hides it). */
+    private final float restNameAlpha;
+    /** cinematic_home: only then does a launch record the last-opened app the shelf uses. */
+    private final boolean cinematic;
+    /** Dock order (config.xml dock_apps, or a theme's config.json). */
+    private final List<String> favourites;
+    /** Grid apps fill the dock slots dock_apps leaves free (config.xml, fill_dock). */
+    private final boolean fillDock;
+    /** Dock apps found at the last reload, and the empty slots after them. */
+    private int docked, emptySlots;
+    /** True when a + tile sits after the dock apps (config.xml dock_add_button). */
+    private boolean addButton;
+    /** A + tile after the dock apps opens the App library (config.xml, dock_add_button). */
+    private final boolean dockAddButton;
+    /** Never shown as tiles (res/values/config.xml, hidden_apps). */
+    private final Set<String> hidden;
+    /** Apps pre-seeded into the App library's "added" set (config.xml library_apps); empty by default. */
+    private final Set<String> libraryPreload;
+    private final boolean animations;
+    private final boolean advancedEffects;
+    private final boolean showLibrary;
+    /** Packages with a leanback entry at the last reload(): their tiles launch with the leanback category. */
+    private Set<String> leanbackPackages = new HashSet<>();
+    private final boolean showHomeSettings;
+    /** Calmer motion for weak GPUs (config.xml, reduced_motion): no overshoot, shorter fades. */
+    private final boolean reducedMotion;
+    /** The focus zoom may overshoot (config.xml, focus_overshoot). */
+    private final boolean focusOvershoot;
+    /** Package to the action its tile sends instead of the start screen (config.xml, launch_actions). */
+    private final Map<String, String> launchActions;
+    /** Hold OK opens the activity's tile menu (config.xml, tile_menu); false opens App info, as before. */
+    private final boolean tileMenu;
+    /** Tile names and bundled banners that replace the app's own (config.xml, app_labels and app_banners). */
+    private final Map<String, String> appLabels, appBanners;
+    /** Every app tile is its icon on a card tinted from that icon, never its banner (config.xml, uniform_tiles). */
+    private final boolean uniformTiles;
+    /** Packages drawn from their icon and name even when they have a banner (config.xml icon_tiles). */
+    private final Set<String> iconTiles;
+    private final List<Entry> items = new ArrayList<>();
+
+    AppAdapter(Context ctx, TileListener listener, int dockSize, Config cfg) {
+        this.ctx = ctx;
+        this.listener = listener;
+        this.dockSize = dockSize;
+        this.favourites = cfg.dockApps;
+        this.fillDock = cfg.fillDock;
+        this.hidden = new HashSet<>(cfg.hiddenApps);
+        this.libraryPreload = new HashSet<>(cfg.libraryApps);
+        this.animations = cfg.animations;
+        this.advancedEffects = cfg.animations && cfg.advancedEffects;
+        this.showHomeSettings = cfg.showHomeSettingsShortcut;
+        this.showLibrary = LibraryApps.showPill(cfg.appLibrary, cfg.libraryButton, cfg.showLibraryPill);
+        this.reducedMotion = cfg.reducedMotion;
+        this.focusOvershoot = cfg.focusOvershoot;
+        this.rowsBelowDock = cfg.rowsBelowDock;
+        this.dockTitle = cfg.dockTitle;
+        this.dockRow = cfg.dockRow;
+        this.singleRow = cfg.singleRow;
+        this.restNameAlpha = cfg.alwaysShowNames ? 0.75f : 0f;
+        this.cinematic = cfg.cinematicHome;
+        this.launchActions = cfg.launchActions;
+        this.iconTiles = new HashSet<>(Arrays.asList(ctx.getResources().getStringArray(R.array.icon_tiles)));
+        this.tileMenu = cfg.tileMenu;
+        this.appLabels = cfg.appLabels;
+        this.appBanners = cfg.appBanners;
+        this.uniformTiles = cfg.uniformTiles;
+        this.dockAddButton = cfg.dockAddButton;
+        // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
+        // its view being rebound to whatever app now sits in that slot.
+        setHasStableIds(true);
+    }
+
+    /**
+     * Rebuilds the tiles. A shown module card stands in for every tile of its package (same component,
+     * so focus follows it); hidden_apps wins over a card, and a card's package in dock_apps takes that slot.
+     */
+    void reload(List<Cards.Card> cards, List<ResolveInfo> leanback) {
+        PackageManager pm = ctx.getPackageManager();
+        // The LEANBACK query is shared with the module-card check (MainActivity); copy it before adding
+        // library apps so the caller's list stays as it was.
+        List<ResolveInfo> found = new ArrayList<>(leanback);
+        Set<String> tvPackages = new HashSet<>();
+        for (ResolveInfo ri : found) if (ri.activityInfo != null) tvPackages.add(ri.activityInfo.packageName);
+        leanbackPackages = tvPackages;
+        // Copy before merging: LibraryApps.load() may return an immutable empty set (#419).
+        Set<String> added = new HashSet<>(LibraryApps.load(ctx));
+        added.addAll(libraryPreload);
+        Set<String> removed = LibraryApps.loadRemoved(ctx);
+        if (!added.isEmpty()) {
+            Set<String> seen = new HashSet<>(tvPackages);
+            for (ResolveInfo ri : pm.queryIntentActivities(
+                    new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)) {
+                if (ri.activityInfo != null && added.contains(ri.activityInfo.packageName)
+                        && seen.add(ri.activityInfo.packageName)) found.add(ri);
+            }
+        }
+        Map<String, Cards.Card> cardByPkg = new HashMap<>();
+        for (Cards.Card c : cards) cardByPkg.put(c.pkg, c);
+        List<Entry> fresh = new ArrayList<>();
+        // Some system apps declare two leanback entry points under one name (Sony's Timers & Clock on the
+        // BRAVIA VU31), which would show as two identical tiles: keep the first per package and label.
+        Set<String> seen = new HashSet<>();
+        for (ResolveInfo ri : found) {
+            if (ri.activityInfo == null) continue;
+            String pkg = ri.activityInfo.packageName;
+            if (pkg.equals(ctx.getPackageName()) || !ri.activityInfo.exported
+                    || !LibraryApps.visible(tvPackages.contains(pkg), hidden.contains(pkg), added.contains(pkg), removed.contains(pkg))) continue;
+            ComponentName component = new ComponentName(pkg, ri.activityInfo.name);
+            Cards.Card card = cardByPkg.get(pkg);
+            if (card != null && !card.component.equals(component)) continue;   // the card stands in for this tile
+            // Same cleaner as the card prompt: an app label with a bidi override or line separator must not
+            // redraw the tile name as something else (#117).
+            String label = card != null ? card.labe

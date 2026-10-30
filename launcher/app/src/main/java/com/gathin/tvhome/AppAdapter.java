@@ -233,4 +233,40 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.favourites = cfg.dockApps;
         this.fillDock = cfg.fillDock;
         this.hidden = new HashSet<>(cfg.hiddenApps);
-        this.libraryPreload = new Ha
+        this.libraryPreload = new HashSet<>(cfg.libraryApps);
+        this.animations = cfg.animations;
+        this.advancedEffects = cfg.animations && cfg.advancedEffects;
+        this.showHomeSettings = cfg.showHomeSettingsShortcut;
+        this.showLibrary = LibraryApps.showPill(cfg.appLibrary, cfg.libraryButton, cfg.showLibraryPill);
+        this.reducedMotion = cfg.reducedMotion;
+        this.focusOvershoot = cfg.focusOvershoot;
+        this.rowsBelowDock = cfg.rowsBelowDock;
+        this.dockTitle = cfg.dockTitle;
+        this.dockRow = cfg.dockRow;
+        this.singleRow = cfg.singleRow;
+        this.restNameAlpha = cfg.alwaysShowNames ? 0.75f : 0f;
+        this.cinematic = cfg.cinematicHome;
+        this.launchActions = cfg.launchActions;
+        this.iconTiles = new HashSet<>(Arrays.asList(ctx.getResources().getStringArray(R.array.icon_tiles)));
+        this.tileMenu = cfg.tileMenu;
+        this.appLabels = cfg.appLabels;
+        this.appBanners = cfg.appBanners;
+        this.uniformTiles = cfg.uniformTiles;
+        this.dockAddButton = cfg.dockAddButton;
+        // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
+        // its view being rebound to whatever app now sits in that slot.
+        setHasStableIds(true);
+    }
+
+    /**
+     * Rebuilds the tiles. A shown module card stands in for every tile of its package (same component,
+     * so focus follows it); hidden_apps wins over a card, and a card's package in dock_apps takes that slot.
+     */
+    void reload(List<Cards.Card> cards, List<ResolveInfo> leanback) {
+        PackageManager pm = ctx.getPackageManager();
+        // The LEANBACK query is shared with the module-card check (MainActivity); copy it before adding
+        // library apps so the caller's list stays as it was.
+        List<ResolveInfo> found = new ArrayList<>(leanback);
+        Set<String> tvPackages = new HashSet<>();
+        for (ResolveInfo ri : found) if (ri.activityInfo != null) tvPackages.add(ri.activityInfo.packageName);
+ 

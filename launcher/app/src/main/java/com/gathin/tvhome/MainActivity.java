@@ -1,1 +1,1 @@
-$file:/tmp/MainActivity_patched.java
+$file:/tmp/MainActivity_restore.java

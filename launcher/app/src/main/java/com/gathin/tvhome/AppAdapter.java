@@ -1,1 +1,1 @@
-LOAD_FROM_ARGUMENTS_FILE
+../../../../../../../.cursor-rebuild/probe_12000.java

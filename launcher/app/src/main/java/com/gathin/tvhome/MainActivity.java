@@ -1,1 +1,1 @@
-$file:/tmp/MainActivity_restore.java
+$file:/home/ubuntu/cleanyourtv/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java

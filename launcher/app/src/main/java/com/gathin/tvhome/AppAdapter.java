@@ -1,1 +1,1 @@
-$file:/agent/agent-tools/aa_full_content.txt
+$file:/home/ubuntu/cleanyourtv/launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java

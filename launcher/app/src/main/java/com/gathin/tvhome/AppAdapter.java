@@ -1,1 +1,1 @@
-$file:/agent/agent-tools/aa_full_content.txt
+PLACEHOLDER

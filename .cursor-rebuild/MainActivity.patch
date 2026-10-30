@@ -1,0 +1,49 @@
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+index c4993b9..1bc1254 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+@@ -108,6 +108,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     static final String ACTION_VIEW_INPUTS = "com.android.tv.action.VIEW_INPUTS";
+     /** Tiles per row and dock slots (res/values/config.xml, columns). Set in onCreate. */
+     static int COLUMNS = 4;
++    /** Auto-size rows_below_dock from Home apps (config.xml, dynamic_rows). */
++    private boolean dynamicRows;
++    /** Current rows_below_dock (config + on-TV choice); kept for dynamic_rows updates. */
++    private int rowsBelowDock;
+     private boolean rtlAppGrid;
+     private static final long MINUTE_MS = 60_000L;
+     private static final long STATS_MS = 10_000L;
+@@ -449,6 +453,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         settingsKeycodes = cfg.settingsKeycodes;
+         settingsKeyPanel = cfg.settingsKeyPanel;
+         COLUMNS = cfg.columns;
++        dynamicRows = cfg.dynamicRows;
++        rowsBelowDock = cfg.rowsBelowDock;
+         animations = cfg.animations;
+         advancedEffects = cfg.animations && cfg.advancedEffects;
+         reducedMotion = cfg.reducedMotion;
+@@ -1198,6 +1204,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         lastFocusedKey = returnKey;
+         lastFocused = returnSlot;
+         packageSequence = currentPackageSequence(packageSequence);
++        syncDynamicRows();
++    }
++
++    /**
++     * With dynamic_rows, grow or shrink {@code rows_below_dock} so the visible grid fits the Home apps,
++     * and write the same value into Launcher settings so the settings screen stays in sync.
++     */
++    private void syncDynamicRows() {
++        if (!dynamicRows || !dockRow || singleRow) return;
++        int needed = DynamicRows.needed(adapter.gridAppCount(), COLUMNS);
++        if (!DynamicRows.shouldUpdate(rowsBelowDock, needed)) return;
++        SharedPreferences choices = getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE);
++        choices.edit().putInt(Config.ROWS_BELOW_DOCK_KEY, needed).apply();
++        Config.bumpSettingsRevision(choices);
++        rowsBelowDock = needed;
++        // Remember the new revision so onResume does not recreate again after we do.
++        settingsRevision = settingsRevision();
++        grid.post(this::recreate);
+     }
+ 
+     /**

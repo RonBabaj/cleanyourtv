@@ -1,1 +1,1 @@
-__CURSOR_MCP_ARGS_FILE__
+file:///tmp/Config_ONLY.java

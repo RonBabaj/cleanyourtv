@@ -260,3 +260,191 @@ final class Config {
     final boolean handleViewInputs;
     /** Hold OK on a tile opens a menu (Move, Remove from Home, App info) instead of App info (config.xml / theme tile_menu). */
     final boolean tileMenu;
+    /** With wifi_status_color, the icon orange while connected without internet (a captive portal) and red while offline (config.xml, wifi_status_warnings). */
+    final boolean wifiStatusWarnings;
+    /** Apps shown as round logo buttons in the top bar, left of the network pill, and no longer as tiles (config.xml, top_bar_apps). */
+    final List<String> topBarApps;
+    /** The greeting above the clock (Good evening); false hides it (config.xml, show_greeting). */
+    final boolean showGreeting;
+    /** The date and the line between it and the clock in the clock's full white instead of dimmed (config.xml, header_white). */
+    final boolean headerWhite;
+    /** The clock screensaver over Home's wallpaper instead of the black glow (config.xml, clock_wallpaper). */
+    final boolean clockWallpaper;
+    /** How dark the clock screensaver's wallpaper is, 0 to 90 % (config.xml, clock_wallpaper_dim). */
+    final int clockWallpaperDim;
+    /** The clock screensaver's coloured glow; false leaves the clock on plain black, e.g. for an OLED (config.xml, clock_glow). */
+    final boolean clockGlow;
+    /** Every app in the dock's row, which scrolls sideways, and no grid below it (config.xml, single_row); needs dock_row. */
+    final boolean singleRow;
+    /** With single_row, the band runs behind every app in the row, not only the dock apps (config.xml, dock_band_all). */
+    final boolean dockBandAll;
+    /** Grow/shrink rows_below_dock with Home apps and keep Launcher settings in sync (config.xml, dynamic_rows). */
+    final boolean dynamicRows;
+    /** A + tile after the dock apps opens the App library (config.xml, dock_add_button). */
+    final boolean dockAddButton;
+
+    private Config(List<String> dockApps, boolean fillDock, List<String> hiddenApps, List<String> libraryApps, List<String> libraryExcludedApps, String liveTvPackage,
+                   String liveTvAction, String liveTvInputId, Map<String, String> launchActions, Map<String, String> appLabels,
+                   Map<String, String> appBanners, String sourcePanelService, String sourcePanelAction,
+                   String sourcePanelExtra, boolean coocaaSources, String inputAction, List<String> inputSources,
+                   String inputUriScheme, int columns, int rowsBelowDock, boolean animations, boolean advancedEffects,
+                   boolean shamsiDate, String greetingName, boolean moduleCards, boolean reducedMotion, boolean bootToLiveTv, boolean openOnStartChoice, boolean dockTitle, boolean dockRow, boolean topMenu, boolean launcherSettingsButton, boolean reorderButton, boolean showNetworkPill, boolean showInputsPill, boolean iconOnlyButtons, boolean iconOnlyInputs, boolean libraryButton, boolean showLibraryPill, int wifiLabelWidth, boolean alwaysShowNames, boolean wallpaperTrueColor, boolean focusOvershoot, String vpnApp,
+                   boolean showHomeSettingsShortcut, boolean showStats, String gameDay, boolean appLibrary, boolean appLibrarySelection, boolean libraryOkOpens, boolean uniformTiles, int backgroundColor, int skyIntensity,
+                   int[] settingsKeycodes, boolean settingsKeyPanel, boolean restoreKeyServices, boolean wallpaperEnabled, File wallpaper, List<File> wallpapers,
+                   int wallpaperRotationMinutes, int wallpaperDim, int dockOpacity, String wallpaperOrder, boolean overlayApplied,
+                   Festival festival, int[] inputKeycodes, List<String> appKeys, String stockHomeRedirect,
+                   List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow, boolean appGlow, boolean fadeRows, int homeIdleClockMinutes,
+                   boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
+                   boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
+                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
+                   int openOnStartNetworkWait, boolean iconOnlyVpn, String clockFormat, boolean backOpensClock,
+                   boolean dynamicRows, boolean dockAddButton) {
+        this.handleViewInputs = handleViewInputs;
+        this.tileMenu = tileMenu;
+        this.inputKeycodes = inputKeycodes;
+        this.appKeys = Collections.unmodifiableList(appKeys);
+        this.keyFilter = keyFilter;
+        this.stockHomeRedirect = stockHomeRedirect;
+        this.dockApps = Collections.unmodifiableList(dockApps);
+        this.fillDock = fillDock;
+        this.hiddenApps = Collections.unmodifiableList(hiddenApps);
+        this.libraryApps = Collections.unmodifiableList(libraryApps);
+        this.libraryExcludedApps = Collections.unmodifiableList(libraryExcludedApps);
+        this.liveTvPackage = liveTvPackage;
+        this.liveTvAction = liveTvAction;
+        this.liveTvInputId = liveTvInputId;
+        this.launchActions = Collections.unmodifiableMap(launchActions);
+        this.appLabels = Collections.unmodifiableMap(appLabels);
+        this.appBanners = Collections.unmodifiableMap(appBanners);
+        this.sourcePanelService = sourcePanelService;
+        this.sourcePanelAction = sourcePanelAction;
+        this.sourcePanelExtra = sourcePanelExtra;
+        this.coocaaSources = coocaaSources;
+        this.inputAction = inputAction;
+        this.inputSources = Collections.unmodifiableList(inputSources);
+        this.inputUriScheme = inputUriScheme;
+        this.columns = columns;
+        this.rowsBelowDock = rowsBelowDock;
+        this.animations = animations;
+        this.advancedEffects = advancedEffects;
+        this.shamsiDate = shamsiDate;
+        this.lunarDate = lunarDate;
+        this.lunarUtcOffset = lunarUtcOffset;
+        this.dateBelowClock = dateBelowClock;
+        this.vpnPill = vpnPill;
+        this.locale = locale;
+        this.greetingName = greetingName;
+        this.moduleCards = moduleCards;
+        this.reducedMotion = reducedMotion;
+        this.bootToLiveTv = bootToLiveTv;
+        this.openOnStartChoice = openOnStartChoice;
+        this.dockTitle = dockTitle;
+        this.dockRow = dockRow;
+        this.topMenu = topMenu;
+        this.launcherSettingsButton = launcherSettingsButton;
+        this.reorderButton = reorderButton;
+        this.showNetworkPill = showNetworkPill;
+        this.showInputsPill = showInputsPill;
+        this.iconOnlyButtons = iconOnlyButtons;
+        this.iconOnlyInputs = iconOnlyInputs;
+        this.iconOnlyVpn = iconOnlyVpn;
+        this.backOpensClock = backOpensClock;
+        this.libraryButton = libraryButton;
+        this.showLibraryPill = showLibraryPill;
+        this.wifiLabelWidth = wifiLabelWidth;
+        this.alwaysShowNames = alwaysShowNames;
+        this.wallpaperTrueColor = wallpaperTrueColor;
+        this.focusOvershoot = focusOvershoot;
+        this.vpnApp = vpnApp;
+        this.showHomeSettingsShortcut = showHomeSettingsShortcut;
+        this.showStats = showStats;
+        this.gameDay = gameDay;
+        this.appLibrary = appLibrary;
+        this.appLibrarySelection = appLibrarySelection;
+        this.libraryOkOpens = libraryOkOpens;
+        this.uniformTiles = uniformTiles;
+        this.backgroundColor = backgroundColor;
+        this.skyIntensity = skyIntensity;
+        this.settingsKeycodes = settingsKeycodes;
+        this.settingsKeyPanel = settingsKeyPanel;
+        this.restoreKeyServices = restoreKeyServices;
+        this.wallpaperEnabled = wallpaperEnabled;
+        this.wallpaper = wallpaper;
+        this.wallpapers = Collections.unmodifiableList(wallpapers);
+        this.wallpaperRotationMinutes = wallpaperRotationMinutes;
+        this.wallpaperDim = wallpaperDim;
+        this.dockOpacity = dockOpacity;
+        this.wallpaperOrder = wallpaperOrder;
+        this.overlayApplied = overlayApplied;
+        this.festival = festival;
+        this.raceCalendar = Collections.unmodifiableList(raceCalendar);
+        this.cinematicHome = cinematicHome;
+        this.ambientGlow = ambientGlow;
+        this.appGlow = appGlow;
+        this.fadeRows = fadeRows;
+        this.homeIdleClockMinutes = homeIdleClockMinutes;
+        this.dockGlass = dockGlass;
+        this.dockEvenPadding = dockEvenPadding;
+        this.dockBand = dockBand;
+        this.cinematicDots = cinematicDots;
+        this.cinematicWhiteFocus = cinematicWhiteFocus;
+        this.wifiStatusColor = wifiStatusColor;
+        this.cinematicArt = cinematicArt;
+        this.cinematicScrim = cinematicScrim;
+        this.wallpaperMoods = wallpaperMoods;
+        this.gamepadPassthrough = gamepadPassthrough;
+        this.consumeVolumeKeys = consumeVolumeKeys;
+        this.powerOnHome = powerOnHome;
+        this.homeLongPressHome = homeLongPressHome;
+        this.powerOnHomeAlways = powerOnHomeAlways;
+        this.inputsConnectedOnly = inputsConnectedOnly;
+        this.openOnStartNetworkWait = openOnStartNetworkWait;
+        this.clockFormat = clockFormat;
+        this.wifiStatusWarnings = wifiStatusWarnings;
+        this.topBarApps = Collections.unmodifiableList(topBarApps);
+        this.showGreeting = showGreeting;
+        this.headerWhite = headerWhite;
+        this.clockWallpaper = clockWallpaper;
+        this.clockWallpaperDim = clockWallpaperDim;
+        this.clockGlow = clockGlow;
+        this.singleRow = singleRow;
+        this.dockBandAll = dockBandAll;
+        this.glowStyle = glowStyle(glowStyle);
+        this.wallpaperCaptions = wallpaperCaptions;
+        this.glassStyle = glassStyle(glassStyle);
+        this.dynamicRows = dynamicRows;
+        this.dockAddButton = dockAddButton;
+    }
+
+    /** A known glow_style, or radial (the default) for anything else. */
+    static String glowStyle(String value) {
+        return value != null && GLOW_HORIZON.equalsIgnoreCase(value.trim()) ? GLOW_HORIZON : GLOW_RADIAL;
+    }
+
+    /** A known glass_style, or glass (the default) for anything else. */
+    static String glassStyle(String value) {
+        if (value == null) return GLASS_DEFAULT;
+        String v = value.trim();
+        if (GLASS_RIM.equalsIgnoreCase(v)) return GLASS_RIM;
+        return GLASS_HALO.equalsIgnoreCase(v) ? GLASS_HALO : GLASS_DEFAULT;
+    }
+
+    /** The folder the theme tools push into; null when external storage is unavailable. */
+    static File dir(Context ctx) {
+        return ctx.getExternalFilesDir(null);
+    }
+
+    static Config load(Context ctx) {
+        Resources res = ctx.getResources();
+        List<String> dock = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.dock_apps)));
+        boolean fillDock = res.getBoolean(R.bool.fill_dock);
+        List<String> hidden = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.hidden_apps)));
+        List<String> libraryApps = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.library_apps)));
+        List<String> libraryExcludedApps = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.library_excluded_apps)));
+        String liveTv = res.getString(R.string.live_tv_package).trim();
+        String liveTvAction = res.getString(R.string.live_tv_action).trim();
+        String liveTvInputId = res.getString(R.string.live_tv_input_id).trim();
+        List<String> launchActions = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.launch_actions)));
+        List<String> appLabels = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.app_labels)));
+        List<String> appBanners = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.app_banners)));
+        String panelServ

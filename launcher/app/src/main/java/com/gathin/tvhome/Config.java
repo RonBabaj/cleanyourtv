@@ -1,1 +1,1 @@
-file:///tmp/Config_ONLY.java
+LOAD_FROM_ACTIVE_ARGS
